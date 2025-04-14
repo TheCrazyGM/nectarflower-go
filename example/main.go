@@ -66,64 +66,65 @@ func main() {
 
 	// Example: Fetch a recent block
 	fmt.Println("\nFetching a recent block...")
-	
+
 	// First get the current block number
 	var blockProps map[string]any
 	err = client.Call("database_api.get_dynamic_global_properties", nil, &blockProps)
 	if err != nil {
 		log.Fatalf("Error fetching global properties: %v", err)
 	}
-	
+
 	currentBlockNum, ok := blockProps["head_block_number"].(float64)
 	if !ok {
 		log.Fatalf("Error getting block number")
 	}
-	
+
 	// Fetch a block that's a few blocks behind the head to ensure it's available
 	targetBlockNum := int64(currentBlockNum) - 10
 	fmt.Printf("Fetching block #%d...\n", targetBlockNum)
-	
+
 	// Create parameters for get_block method
-	blockParams := map[string]interface{}{
+	blockParams := map[string]any{
 		"block_num": targetBlockNum,
 	}
-	
+
 	// Fetch the block
 	var block map[string]any
 	err = client.Call("block_api.get_block", blockParams, &block)
 	if err != nil {
 		log.Fatalf("Error fetching block: %v", err)
 	}
-	
+
 	// Extract block data
 	blockData, ok := block["block"].(map[string]any)
 	if !ok {
 		log.Fatalf("Error extracting block data")
 	}
-	
+
 	// Print block details
 	fmt.Println("Block details:")
 	fmt.Printf("  Block ID: %v\n", blockData["block_id"])
 	fmt.Printf("  Previous: %v\n", blockData["previous"])
 	fmt.Printf("  Timestamp: %v\n", blockData["timestamp"])
-	
+
 	// Print transaction count
+	tx_ids, ok := blockData["transaction_ids"].([]any)
 	transactions, ok := blockData["transactions"].([]any)
 	if ok {
 		fmt.Printf("  Transaction count: %d\n", len(transactions))
-		
+
 		// If there are transactions, print details of the first one
 		if len(transactions) > 0 {
 			tx := transactions[0].(map[string]any)
-			txId, _ := tx["transaction_id"].(string)
+			txId, _ := tx_ids[0].(string)
 			fmt.Println("\nFirst transaction details:")
 			fmt.Printf("  Transaction ID: %s\n", txId)
-			
+
 			// Pretty print the first transaction
 			txJSON, _ := json.MarshalIndent(tx, "  ", "  ")
 			fmt.Printf("  Transaction data:\n%s\n", string(txJSON))
 		}
 	}
-	
+
 	fmt.Println("\nDemonstration completed successfully!")
 }
